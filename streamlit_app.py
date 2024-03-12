@@ -1,6 +1,5 @@
 import streamlit as st
 from langchain_google_genai import GoogleGenerativeAI
-from langchain_core.messages import HumanMessage, SystemMessage
 
 if "stack" not in st.session_state or "key" not in st.session_state:
     st.session_state.stack = []
