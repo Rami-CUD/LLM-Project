@@ -4,15 +4,24 @@ import streamlit as st
 from langchain_google_genai import GoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
-if "GOOGLE_API_KEY" not in os.environ:
-    API_KEY = st.sidebar.text_input('OpenAI API Key', type='password')
-
+if "stack" not in st.session_state or "key" not in st.session_state:
+    st.session_state.stack = []
+    
+st.session_state.key = "AIzaSyCILLp4kYKQKVW8BWmXE2Hh4fomiZwXdfU"
 st.title = "Testing"
 
-model = GoogleGenerativeAI(model="gemini-pro", google_api_key=API_KEY)
+model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key)
 
-with st.form("my_form"):
-    text = st.text_area("Enter Text")
-    submitted = st.form_submit_button("Submit")
-    if submitted:
-        st.info(model.invoke(text))
+chat = st.chat_input("Enter Text")
+messages = st.container()
+if chat:
+    for prompt, response in st.session_state.stack:
+        messages.chat_message("User").write(prompt)
+        messages.chat_message("AI").write(response)
+    messages.chat_message("User").write(chat)
+    try:        
+        current_response = model.invoke(chat)
+    except IndexError:
+        current_response = "Sorry, I can not respond to this prompt..."
+    messages.chat_message("AI").write(current_response)
+    st.session_state.stack.append((chat, current_response))
