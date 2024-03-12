@@ -1,5 +1,3 @@
-import os
-import getpass
 import streamlit as st
 from langchain_google_genai import GoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
