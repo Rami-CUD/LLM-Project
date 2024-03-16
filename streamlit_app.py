@@ -8,9 +8,10 @@ st.session_state.key = "AIzaSyCILLp4kYKQKVW8BWmXE2Hh4fomiZwXdfU"
 st.title = "Testing"
 
 model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key)
-
-chat = st.chat_input("Enter Text")
+with st.popover("Upload a File"):
+    st.file_uploader(label="dds", type=".pdf", label_visibility="collapsed")
 messages = st.container()
+chat = st.chat_input("Enter Text")
 if chat:
     for prompt, response in st.session_state.stack:
         messages.chat_message("User").write(prompt)
@@ -20,5 +21,8 @@ if chat:
         current_response = model.invoke(chat)
     except IndexError:
         current_response = "Sorry, I can not respond to this prompt..."
+    except Exception:
+        current_response = ":red[An error has occured...]"
+    
     messages.chat_message("AI").write(current_response)
     st.session_state.stack.append((chat, current_response))
