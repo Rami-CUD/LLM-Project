@@ -9,8 +9,8 @@ st.title = "Testing"
 with st.echo():
     st.write(st.__version__)
 model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key)
-# with st.popover("Upload a File"):
-#     st.file_uploader(label="dds", type=".pdf", label_visibility="collapsed")
+ with st.popover("Upload a File"):
+    st.file_uploader(label="dds", type=".pdf", label_visibility="collapsed")
 messages = st.container()
 chat = st.chat_input("Enter Text")
 if chat:
