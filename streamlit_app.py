@@ -6,8 +6,6 @@ if "stack" not in st.session_state or "key" not in st.session_state:
     
 st.session_state.key = "AIzaSyCILLp4kYKQKVW8BWmXE2Hh4fomiZwXdfU"
 st.title = "Testing"
-with st.echo():
-    st.write(st.__version__)
 model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key)
 with st.expander("Upload a File"):
     st.file_uploader(label="dds", type=".pdf", label_visibility="collapsed")
