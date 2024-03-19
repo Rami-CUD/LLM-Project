@@ -5,7 +5,7 @@ from typing import IO, Union
 from io import StringIO
 
 MAX_PROMPT_CHAR_COUNT = 30500
-
+st.__version__
 if "stack" not in st.session_state:
     st.session_state.stack = []
 if "pdf_state_changed" not in st.session_state:
