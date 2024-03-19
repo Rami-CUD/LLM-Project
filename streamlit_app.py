@@ -51,7 +51,6 @@ with st.expander("Upload a File"):
         
         st.session_state.pdf_state_changed = False
 
-st.session_state.file_content
 messages = st.container()
 chat = st.chat_input("Enter Text")
 display_chat_history(st.session_state.stack)
