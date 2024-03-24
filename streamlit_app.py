@@ -1,11 +1,8 @@
 import streamlit as st
 from langchain_google_genai import GoogleGenerativeAI
 from pypdf import PdfReader
-<<<<<<< HEAD
-=======
 from typing import IO, Union
 from io import StringIO
->>>>>>> 62cf4f381ce05cfef8792de85e7a803f1d66319a
 
 MAX_PROMPT_CHAR_COUNT = 30500
 if "stack" not in st.session_state:
