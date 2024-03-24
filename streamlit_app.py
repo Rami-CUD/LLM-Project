@@ -36,13 +36,13 @@ if "pdf_state_changed" not in st.session_state:
 if "file_content" not in st.session_state:
     st.session_state.file_content = ""
 
-# function that displays the user's input and gemini's response
+# Function that goes through the history list and display the chat history
 def display_chat_history(chat:list[tuple[2]]):
     for prompt, response in chat:
         messages.chat_message("User").write(prompt)
         messages.chat_message("AI").write(response)
 
-# function used to read a pdf file that is inputted by the user
+# Uses PDFreader to read each page in PDF and add it to one big String
 def get_pdf_content(file:Union[IO, str]):
     reader = PdfReader(file)
     string_buffer = StringIO()
@@ -54,21 +54,21 @@ def get_pdf_content(file:Union[IO, str]):
     progress_bar.empty()
     return string_buffer.getvalue()
 
-# stores a pdf file in the user's state
+# stores a pdf file in the user's state and displays warning if file is too big
 def change_pdf_state(PDF):
     st.session_state.file_content = get_pdf_content(PDF)
     if len(st.session_state.file_content) > MAX_PROMPT_CHAR_COUNT:
         st.warning("PDF length is greater than supported length. Prompt might not work...")
 
-# used to change a visual when inputting a pdf file
+# Will get called when the user changes the state of the st.file_uploader object
 def on_change_func():
     st.session_state.pdf_state_changed = True
 
-# a session key and title is hard coded for program simplicity and to avoid user confusion
+# A session key and title is hard coded for program simplicity and to avoid user confusion
 st.session_state.key = "AIzaSyCILLp4kYKQKVW8BWmXE2Hh4fomiZwXdfU"
-st.title = "Testing"
+st.title = "ChatGemini"
 
-# gemini initilized with top k, top p, and temperature parameters 
+# Gemini initilized with top k, top p, and temperature parameters 
 model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key, max_retries=6, top_k=10, top_p=0.9, temperature=0.65)
 
 # Two filler columns are placed between col1 and col2 for spacing
@@ -86,16 +86,16 @@ with col2:
     if st.button("Clear History"):
         st.session_state.stack = []
 
-# user input storage 
+# Container that holds the messages 
 messages = st.container()
-# input ui
+# Chat input UI element
 chat = st.chat_input("Enter Text")
 
-# this segment of the code displays the user's input and inputs it to gemini
+# Constantly display the chat history
 display_chat_history(st.session_state.stack)
+
+#If user inputs something in the chat_input, display his message, get and display the AI response, and add both to the history
 if chat:
-    st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
-    #Start displaying new message
     messages.chat_message("User").write(chat)
     try:
         if st.session_state.file_content:
