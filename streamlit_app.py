@@ -4,6 +4,8 @@ from pypdf import PdfReader
 from typing import IO, Union
 from io import StringIO
 
+st.set_page_config(page_title="ChatGemini", page_icon="🤖")
+
 css = """
     <style>
     .chatgemini-heading {
