@@ -6,6 +6,7 @@ from pypdf import PdfReader
 from typing import IO, Union
 from io import StringIO
 
+#Sets title and icon to be display in browser tabs
 st.set_page_config(page_title="ChatGemini", page_icon="🤖")
 
 # format for a CSS style 
@@ -67,8 +68,10 @@ def on_change_func():
 st.session_state.key = "AIzaSyCILLp4kYKQKVW8BWmXE2Hh4fomiZwXdfU"
 st.title = "Testing"
 
-# gemini initilized 
-model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key, max_retries=6, top_k=10, top_p=0.9, temperature=0.75)
+# gemini initilized with top k, top p, and temperature parameters 
+model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key, max_retries=6, top_k=10, top_p=0.9, temperature=0.65)
+
+# Two filler columns are placed between col1 and col2 for spacing
 col1, *_, col2 = st.columns(4, gap="large")
 with col1:
     with st.popover("Upload a File"):
