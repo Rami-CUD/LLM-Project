@@ -4,6 +4,22 @@ from pypdf import PdfReader
 from typing import IO, Union
 from io import StringIO
 
+css = """
+    <style>
+    .chatgemini-heading {
+        font-size: 50px;
+        font-weight: bold;
+        color: #fcad03;
+        text-align: center;
+    }
+    </style>
+"""
+
+# Apply CSS styles
+st.markdown(css, unsafe_allow_html=True)
+
+# Render the heading
+st.markdown('<h1 class="chatgemini-heading">ChatGemini</h1>', unsafe_allow_html=True)
 MAX_PROMPT_CHAR_COUNT = 30500
 if "stack" not in st.session_state:
     st.session_state.stack = []
@@ -40,7 +56,7 @@ def on_change_func():
 st.session_state.key = "AIzaSyCILLp4kYKQKVW8BWmXE2Hh4fomiZwXdfU"
 st.title = "Testing"
 model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key)
-col1, col2 = st.columns(2, gap="small")
+col1, col2 = st.columns(2, gap="large")
 with col1:
     with st.popover("Upload a File"):
         PDFFile = st.file_uploader(label="dds", type=".pdf", label_visibility="collapsed", on_change=on_change_func)
@@ -59,7 +75,7 @@ messages = st.container()
 chat = st.chat_input("Enter Text")
 display_chat_history(st.session_state.stack)
 if chat:
-    
+    st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
     #Start displaying new message
     messages.chat_message("User").write(chat)
     try:
