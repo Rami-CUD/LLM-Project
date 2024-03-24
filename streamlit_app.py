@@ -84,8 +84,10 @@ if chat:
         else:
             prompt = chat        
         current_response = model.invoke(prompt)
+        if not current_response:
+            raise Exception("Empty Response")
     except IndexError:
-        current_response = "Sorry, I can not respond to this prompt..."
+        current_response = ":red[Sorry, I can not respond to this prompt...]"
     except Exception:
         current_response = ":red[An error has occured...]"
     
