@@ -56,7 +56,7 @@ def on_change_func():
 st.session_state.key = "AIzaSyCILLp4kYKQKVW8BWmXE2Hh4fomiZwXdfU"
 st.title = "Testing"
 model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key)
-col1, col2 = st.columns(2, gap="large")
+col1, *_, col2 = st.columns(4, gap="large")
 with col1:
     with st.popover("Upload a File"):
         PDFFile = st.file_uploader(label="dds", type=".pdf", label_visibility="collapsed", on_change=on_change_func)
