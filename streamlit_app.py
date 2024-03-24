@@ -40,15 +40,20 @@ def on_change_func():
 st.session_state.key = "AIzaSyCILLp4kYKQKVW8BWmXE2Hh4fomiZwXdfU"
 st.title = "Testing"
 model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key)
-with st.popover("Upload a File"):
-    PDFFile = st.file_uploader(label="dds", type=".pdf", label_visibility="collapsed", on_change=on_change_func)
-    if st.session_state.pdf_state_changed:
-        if PDFFile:
-            change_pdf_state(PDFFile)
-        else:
-            st.session_state.file_content = ""    
-        
-        st.session_state.pdf_state_changed = False
+col1, col2 = st.columns(2, gap="small")
+with col1:
+    with st.popover("Upload a File"):
+        PDFFile = st.file_uploader(label="dds", type=".pdf", label_visibility="collapsed", on_change=on_change_func)
+        if st.session_state.pdf_state_changed:
+            if PDFFile:
+                change_pdf_state(PDFFile)
+            else:
+                st.session_state.file_content = ""    
+            
+            st.session_state.pdf_state_changed = False
+with col2:
+    if st.button("Clear History"):
+        st.session_state.stack = []
 
 messages = st.container()
 chat = st.chat_input("Enter Text")
