@@ -68,7 +68,7 @@ st.session_state.key = "AIzaSyCILLp4kYKQKVW8BWmXE2Hh4fomiZwXdfU"
 st.title = "Testing"
 
 # gemini initilized 
-model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key)
+model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key, max_retries=6, top_k=10, top_p=0.9, temperature=0.75)
 col1, *_, col2 = st.columns(4, gap="large")
 with col1:
     with st.popover("Upload a File"):
