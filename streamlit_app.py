@@ -1,11 +1,13 @@
 # importing necessary files 
 # 'import as' imports a module and gives it an alias 
 import streamlit as st
+from dotenv import load_dotenv
 from langchain_google_genai import GoogleGenerativeAI
 from pypdf import PdfReader
 from typing import IO, Union
 from io import StringIO
 
+load_dotenv()
 #Sets title and icon to be display in browser tabs
 st.set_page_config(page_title="ChatGemini", page_icon="🤖")
 
@@ -64,12 +66,32 @@ def change_pdf_state(PDF):
 def on_change_func():
     st.session_state.pdf_state_changed = True
 
+def get_response_while_showing_stream(model:GoogleGenerativeAI, prompt:str, container) -> str:
+    with container.chat_message("AI"):
+        text = ""
+        output_container = st.empty()
+        try:
+            with st.spinner("Generating..."):
+                for chunk in model.stream(prompt):
+                    text += chunk
+                    output_container.write(text)
+        # two exceptions may occur
+        except IndexError:
+            # this error is when the response is restricted (based on Google's terms and conditions)
+            text = ":red[Sorry, I can not respond to this prompt...]"
+        except Exception:
+            # general exceptions
+            text = ":red[An error has occured...]"
+    
+        output_container.write(text)
+    return text
+
+
 # A session key and title is hard coded for program simplicity and to avoid user confusion
-st.session_state.key = "AIzaSyCILLp4kYKQKVW8BWmXE2Hh4fomiZwXdfU"
 st.title = "ChatGemini"
 
 # Gemini initilized with top k, top p, and temperature parameters 
-model = GoogleGenerativeAI(model="gemini-pro", google_api_key=st.session_state.key, max_retries=6, top_k=10, top_p=0.9, temperature=0.65)
+model = GoogleGenerativeAI(model="gemini-pro", max_retries=6, top_k=10, top_p=0.9, temperature=0.60, verbose=True)
 
 # Two filler columns are placed between col1 and col2 for spacing
 col1, *_, col2 = st.columns(4, gap="large")
@@ -102,7 +124,7 @@ if chat:
             prompt = f"Context: {st.session_state.file_content} Prompt: {chat}"
         else:
             prompt = chat        
-        current_response = model.invoke(prompt)
+        current_response = get_response_while_showing_stream(model, chat, messages)
         if not current_response:
             raise Exception("Empty Response")
             
@@ -115,7 +137,9 @@ if chat:
         current_response = ":red[An error has occured...]"
 
     # displaying Gemini's responses
-    messages.chat_message("AI").write(current_response)
+
+
+
 
     # adding Gemini's response to the history stack
     st.session_state.stack.append((chat, current_response))
