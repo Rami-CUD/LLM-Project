@@ -43,7 +43,6 @@ st.markdown(css, unsafe_allow_html=True)
 
 # Render the heading
 st.markdown('<h1 class="chatgemini-heading">ChatGemini</h1>', unsafe_allow_html=True)
-MAX_PROMPT_CHAR_COUNT = 30500
 
 # Initializing session state variables (keys) 
 if "history_list" not in st.session_state:
