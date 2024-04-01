@@ -17,8 +17,7 @@ from pypdf import PdfReader
 from typing import IO, Union
 from io import StringIO, BytesIO
 from BytesPDFLoader import BytesIOPyPDFLoader
-
-
+from langchain_community.document_loaders.pdf import OnlinePDFLoader
 
 # Loads enviroment variables stores in .env file
 load_dotenv()
@@ -51,12 +50,14 @@ if "pdf_state_changed" not in st.session_state:
     st.session_state.pdf_state_changed = True
 if "pdf_vector_store" not in st.session_state:
     st.session_state.pdf_vector_store = None
+if "url" not in st.session_state:
+    st.session_state.url = ""
 
 # Function that goes through the history list and display the chat history
 def display_chat_history(history:list[BaseMessage]):
     user_message = True
     for message in history:
-        message_sender = "User" if user_message else "AI"
+        message_sender = "User" if isinstance(message, HumanMessage) else "AI"
         messages.chat_message(message_sender).write(message.content)
         user_message = not user_message
 
@@ -68,7 +69,10 @@ def on_change_func():
 
 # Initalize Langchain [Documents] from uploaded file and split them up into chunks 
 def get_docs(file: BytesIO):
-    loader = BytesIOPyPDFLoader(file)
+    if isinstance(file, BytesIO):
+        loader = BytesIOPyPDFLoader(file)
+    elif isinstance(file, str):
+        loader = PyPDFLoader(file, extract_images=False)
     documents = loader.load()
     text_splitter = RecursiveCharacterTextSplitter()
     split_documents = text_splitter.split_documents(documents)
@@ -94,7 +98,7 @@ def create_chain(with_context: bool, model):
         chain = prompt | model
         return chain
     
-    messages_list[0] = ("system", "Without prefixing your responses with AI: or System: , answer the user's questions based on the context: {context}")
+    messages_list[0] = ("system", "Without prefixing your responses with AI: or System: , answer the user's questions and use the context if needed: {context}")
     prompt = ChatPromptTemplate.from_messages(messages_list)
     document_chain = create_stuff_documents_chain(
         llm=model,
@@ -153,6 +157,13 @@ def set_pdf_state(file: BytesIO | None):
         vector_store = create_vector_store(docs)
         state_to_store = vector_store
     st.session_state.pdf_vector_store = state_to_store
+def set_pdf_state_from_url(url: str | None):
+    state_to_store = None
+    if url:
+        docs = get_docs(url)
+        vector_store = create_vector_store(docs)
+        state_to_store = vector_store
+    st.session_state.pdf_vector_store = state_to_store
 
 
 
@@ -167,9 +178,14 @@ col1, *_, col2 = st.columns(4, gap="large")
 with col1:
     with st.popover("Upload a File"):
         PDFFile = st.file_uploader(label="dds", type=".pdf", label_visibility="collapsed", on_change=on_change_func)
-        if st.session_state.pdf_state_changed:
-            set_pdf_state(PDFFile)
-            st.session_state.pdf_state_changed = False
+    url = st.text_input("Input URL", on_change=on_change_func)
+    if url and st.session_state.pdf_state_changed:
+        st.session_state.url = url
+        set_pdf_state_from_url(url)
+    if st.session_state.pdf_state_changed:
+        set_pdf_state(PDFFile)
+        st.session_state.pdf_state_changed = False
+
 with col2:
     if st.button("Clear History"):
         st.session_state.history_list = []
