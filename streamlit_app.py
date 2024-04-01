@@ -18,6 +18,7 @@ from typing import IO, Union
 from io import StringIO, BytesIO
 from BytesPDFLoader import BytesIOPyPDFLoader
 from langchain_community.document_loaders.pdf import OnlinePDFLoader
+from time import sleep
 
 # Loads enviroment variables stores in .env file
 load_dotenv()
@@ -50,8 +51,6 @@ if "pdf_state_changed" not in st.session_state:
     st.session_state.pdf_state_changed = True
 if "pdf_vector_store" not in st.session_state:
     st.session_state.pdf_vector_store = None
-if "url" not in st.session_state:
-    st.session_state.url = ""
 
 # Function that goes through the history list and display the chat history
 def display_chat_history(history:list[BaseMessage]):
@@ -68,11 +67,13 @@ def on_change_func():
 
 
 # Initalize Langchain [Documents] from uploaded file and split them up into chunks 
-def get_docs(file: BytesIO):
-    if isinstance(file, BytesIO):
-        loader = BytesIOPyPDFLoader(file)
-    elif isinstance(file, str):
-        loader = PyPDFLoader(file, extract_images=False)
+def get_docs(file_input: BytesIO | str):
+    if isinstance(file_input, BytesIO):
+        loader = BytesIOPyPDFLoader(file_input)
+    elif isinstance(file_input, str):
+        loader = PyPDFLoader(file_input, extract_images=False)
+    else:
+        raise ValueError("Unexpected file format")
     documents = loader.load()
     text_splitter = RecursiveCharacterTextSplitter()
     split_documents = text_splitter.split_documents(documents)
@@ -126,17 +127,26 @@ def create_chain(with_context: bool, model):
 # being formulated in real time similar to ChatGPT.
 # The empty output_container allows the text to be replaced every loop instead of being appended to the chat message
 def get_response_while_showing_stream(chain, prompt, chat_history, container) -> str:
+    def write_stream_generator(stream):
+        for chunk in stream:
+            if isinstance(chunk, dict) and "answer" in chunk:
+                chunk = chunk["answer"]
+            elif isinstance(chunk, str):
+                chunk = chunk
+            else:
+                continue
+            for word in list(chunk):
+                yield word
+                sleep(0.005)
+                
+    
     with container.chat_message("AI"):
         text = ""
         output_container = st.empty()
         try:
             with st.spinner("Generating..."):
-                for chunk in chain.stream({"input": prompt, "chat_history": chat_history}):
-                        if isinstance(chunk, dict) and "answer" in chunk:
-                            text += chunk["answer"]
-                        elif isinstance(chunk, str):
-                            text += chunk
-                        output_container.write(text)
+                stream = chain.stream({"input": prompt, "chat_history": chat_history})
+                text = output_container.write_stream(write_stream_generator(stream))
         # IndexError usually occurs when the Gemini's response is restricted
         # Exception handles all other general exceptions
         except IndexError:
@@ -144,26 +154,20 @@ def get_response_while_showing_stream(chain, prompt, chat_history, container) ->
         except Exception as e:
             print(e)
             text = ":red[An error has occured...]"
-    
-        output_container.write(text)
+    output_container.write(text)
     return text
 
 # If user provided a new File, create a vector store using that file
 # Otherwise, set session_state vector_store to none (For example if user removes the uploaded file)
-def set_pdf_state(file: BytesIO | None):
+def set_pdf_state(file_input: BytesIO | str | None):
     state_to_store = None
-    if file:
-        docs = get_docs(file)
+    if file_input:
+        docs = get_docs(file_input)
         vector_store = create_vector_store(docs)
         state_to_store = vector_store
     st.session_state.pdf_vector_store = state_to_store
-def set_pdf_state_from_url(url: str | None):
-    state_to_store = None
-    if url:
-        docs = get_docs(url)
-        vector_store = create_vector_store(docs)
-        state_to_store = vector_store
-    st.session_state.pdf_vector_store = state_to_store
+
+
 
 
 
@@ -174,19 +178,21 @@ model = GoogleGenerativeAI(model="gemini-pro", max_retries=6, top_k=10, top_p=0.
 # Two filler columns are placed between col1 and col2 for spacing
 # Column one contains the upload button
 # Column two contains the clear history button
-col1, *_, col2 = st.columns(4, gap="large")
-with col1:
-    with st.popover("Upload a File"):
-        PDFFile = st.file_uploader(label="dds", type=".pdf", label_visibility="collapsed", on_change=on_change_func)
-    url = st.text_input("Input URL", on_change=on_change_func)
-    if url and st.session_state.pdf_state_changed:
-        st.session_state.url = url
-        set_pdf_state_from_url(url)
+col1, = st.columns(1)
+with st.sidebar:
+    upload_mode = st.radio("Select File Source", ["Local File", "PDF URL"], on_change=on_change_func)
+    file_input = None
+    if upload_mode == "Local File":        
+        with st.popover("Upload a File"):
+            file_input = st.file_uploader(label="Required But Invisible", type=".pdf", label_visibility="collapsed", on_change=on_change_func)
+    else:
+        file_input = st.text_input("Input URL", on_change=on_change_func)
     if st.session_state.pdf_state_changed:
-        set_pdf_state(PDFFile)
+        set_pdf_state(file_input)
         st.session_state.pdf_state_changed = False
 
-with col2:
+
+with col1:
     if st.button("Clear History"):
         st.session_state.history_list = []
 
@@ -202,6 +208,8 @@ display_chat_history(st.session_state.history_list)
 if chat:
     messages.chat_message("User").write(chat)
     has_context: bool = st.session_state.pdf_vector_store is not None
+    if has_context:
+        "Is using context"
     current_chain = create_chain(has_context, model)     
         
     current_response = get_response_while_showing_stream(current_chain, chat, st.session_state.history_list, messages)
