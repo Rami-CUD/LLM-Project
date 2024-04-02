@@ -14,6 +14,7 @@ from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from langchain_core.prompts import MessagesPlaceholder
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from pypdf import PdfReader
+from pypdf.errors import PdfStreamError
 from typing import IO, Union
 from io import StringIO, BytesIO
 from BytesPDFLoader import BytesIOPyPDFLoader
@@ -161,10 +162,13 @@ def get_response_while_showing_stream(chain, prompt, chat_history, container) ->
 # Otherwise, set session_state vector_store to none (For example if user removes the uploaded file)
 def set_pdf_state(file_input: BytesIO | str | None):
     state_to_store = None
-    if file_input:
-        docs = get_docs(file_input)
-        vector_store = create_vector_store(docs)
-        state_to_store = vector_store
+    try:
+        if file_input:
+            docs = get_docs(file_input)
+            vector_store = create_vector_store(docs)
+            state_to_store = vector_store
+    except (PdfStreamError, ValueError):
+        st.error("Invalid File Format")
     st.session_state.pdf_vector_store = state_to_store
 
 
@@ -184,7 +188,7 @@ with st.sidebar:
     file_input = None
     if upload_mode == "Local File":        
         with st.popover("Upload a File"):
-            file_input = st.file_uploader(label="Required But Invisible", type=".pdf", label_visibility="collapsed", on_change=on_change_func)
+            file_input = st.file_uploader(label="Required But Invisible", type=".pdf", label_visibility="collapsed", on_change=on_change_func, disabled=True)
     else:
         file_input = st.text_input("Input URL", on_change=on_change_func)
     if st.session_state.pdf_state_changed:
