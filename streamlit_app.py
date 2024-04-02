@@ -54,12 +54,10 @@ if "pdf_vector_store" not in st.session_state:
     st.session_state.pdf_vector_store = None
 
 # Function that goes through the history list and display the chat history
-def display_chat_history(history:list[BaseMessage]):
-    user_message = True
-    for message in history:
-        message_sender = "User" if isinstance(message, HumanMessage) else "AI"
-        messages.chat_message(message_sender).write(message.content)
-        user_message = not user_message
+def display_chat_history(history:list[tuple[HumanMessage, AIMessage]]):
+    for user_msg, ai_msg in history:
+        messages.chat_message("user").write(user_msg.content)
+        messages.chat_message("AI").write(ai_msg.content)
 
 
 # Will get called when the user changes the state of the st.file_uploader object
@@ -128,7 +126,7 @@ def create_chain(with_context: bool, model):
 # being formulated in real time similar to ChatGPT.
 # The empty output_container allows the text to be replaced every loop instead of being appended to the chat message
 def get_response_while_showing_stream(chain, prompt, chat_history: list[BaseMessage], container) -> str:
-    chat_history = [history_element for history_element in chat_history if not history_element.content.startswith(":red[")]
+    chat_history = [message for Human, AI in chat_history for message in (Human, AI) if not AI.content.startswith(":red[")]
     
     def write_stream_generator(stream):
         for chunk in stream:
@@ -222,5 +220,5 @@ if chat:
             
 
     # Add both the prompt and the response to the history list
-    st.session_state.history_list.append(HumanMessage(content=chat))
-    st.session_state.history_list.append(AIMessage(content=current_response))
+    prompt_answer_pair = (HumanMessage(content=chat), AIMessage(content=current_response))
+    st.session_state.history_list.append(prompt_answer_pair)
