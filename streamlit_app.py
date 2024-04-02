@@ -147,7 +147,7 @@ def get_response_while_showing_stream(chain, prompt, chat_history: list[BaseMess
         try:
             with st.spinner("Generating..."):
                 stream = chain.stream({"input": prompt, "chat_history": chat_history})
-                text = output_container.write_str eam(write_stream_generator(stream))
+                text = output_container.write_stream(write_stream_generator(stream))
         # IndexError usually occurs when the Gemini's response is restricted
         # Exception handles all other general exceptions
         except IndexError:
