@@ -136,8 +136,8 @@ def get_response_while_showing_stream(chain, prompt, chat_history: list[BaseMess
                 chunk = chunk
             else:
                 continue
-            for word in list(chunk):
-                yield word
+            for char in list(chunk):
+                yield char
                 sleep(0.005)
                 
     
@@ -147,7 +147,7 @@ def get_response_while_showing_stream(chain, prompt, chat_history: list[BaseMess
         try:
             with st.spinner("Generating..."):
                 stream = chain.stream({"input": prompt, "chat_history": chat_history})
-                text = output_container.write_stream(write_stream_generator(stream))
+                text = output_container.write_str eam(write_stream_generator(stream))
         # IndexError usually occurs when the Gemini's response is restricted
         # Exception handles all other general exceptions
         except IndexError:
@@ -188,7 +188,7 @@ with st.sidebar:
     file_input = None
     if upload_mode == "Local File":        
         with st.popover("Upload a File"):
-            file_input = st.file_uploader(label="Required But Invisible", type=".pdf", label_visibility="collapsed", on_change=on_change_func, disabled=True)
+            file_input = st.file_uploader(label="Required But Invisible", type=".pdf", label_visibility="collapsed", on_change=on_change_func)
     else:
         file_input = st.text_input("Input URL", on_change=on_change_func)
     if st.session_state.pdf_state_changed:
