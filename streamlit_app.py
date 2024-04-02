@@ -127,7 +127,9 @@ def create_chain(with_context: bool, model):
 # Use stream method of chains to get AI response in chunks and display them as they come to simulate the response
 # being formulated in real time similar to ChatGPT.
 # The empty output_container allows the text to be replaced every loop instead of being appended to the chat message
-def get_response_while_showing_stream(chain, prompt, chat_history, container) -> str:
+def get_response_while_showing_stream(chain, prompt, chat_history: list[BaseMessage], container) -> str:
+    chat_history = [history_element for history_element in chat_history if not history_element.content.startswith(":red[")]
+    
     def write_stream_generator(stream):
         for chunk in stream:
             if isinstance(chunk, dict) and "answer" in chunk:
