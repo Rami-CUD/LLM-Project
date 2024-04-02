@@ -91,7 +91,7 @@ def create_vector_store(docs):
 # Create a langchain chain depending on whether the user provided context or not (context from the PDF document)
 def create_chain(with_context: bool, model):
     messages_list = [
-        ("system", "Answer the user's questions in a friendly and respectful manner, and make sure to NOT prefix your responses with AI: or System:"),
+
         MessagesPlaceholder(variable_name="chat_history"),
         ("user", "{input}")
     ]
