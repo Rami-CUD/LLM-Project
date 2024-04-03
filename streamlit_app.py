@@ -13,12 +13,9 @@ from langchain_community.vectorstores.faiss import FAISS
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from langchain_core.prompts import MessagesPlaceholder
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
-from pypdf import PdfReader
 from pypdf.errors import PdfStreamError
-from typing import IO, Union
-from io import StringIO, BytesIO
+from io import BytesIO
 from BytesPDFLoader import BytesIOPyPDFLoader
-from langchain_community.document_loaders.pdf import OnlinePDFLoader
 from time import sleep
 
 # Loads enviroment variables stores in .env file
