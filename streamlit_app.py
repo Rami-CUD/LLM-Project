@@ -57,12 +57,13 @@ def display_chat_history(history:list[tuple[HumanMessage, AIMessage]]):
         messages.chat_message("AI").write(ai_msg.content)
 
 
-# Will get called when the user changes the state of the st.file_uploader object
+# Gets passed to the streamlit file uploader objects' "on_change" parameter
 def on_change_func():
     st.session_state.pdf_state_changed = True
 
 
-# Initalize Langchain [Documents] from uploaded file and split them up into chunks 
+# Initalize Langchain [Documents] from uploaded file and split them up into chunks
+# Cases for handling both Byte input from local PDF and string input (url) for online pdf
 def get_docs(file_input: BytesIO | str):
     if isinstance(file_input, BytesIO):
         loader = BytesIOPyPDFLoader(file_input)
@@ -119,10 +120,14 @@ def create_chain(with_context: bool, model):
     return retrieval_chain
 
 
-# Use stream method of chains to get AI response in chunks and display them as they come to simulate the response
+# Use stream method of chains to get AI response in chunks and use streamlit's
+# write_stream method to display them as they come to simulate the response
 # being formulated in real time similar to ChatGPT.
-# The empty output_container allows the text to be replaced every loop instead of being appended to the chat message
+# The empty output_container allows the text to be replaced instead of appended which is needed
+# in case we want to display an error
 def get_response_while_showing_stream(chain, prompt, chat_history: list[BaseMessage], container) -> str:
+    # If the AI sees errors and illegal prompts in the history it will be more likely to return an error
+    # This removes erros from the chat history that is given to the AI
     chat_history = [message for Human, AI in chat_history for message in (Human, AI) if not AI.content.startswith(":red[")]
     
     def write_stream_generator(stream):
@@ -169,17 +174,11 @@ def set_pdf_state(file_input: BytesIO | str | None):
     st.session_state.pdf_vector_store = state_to_store
 
 
-
-
-
 # Gemini initilized with top k, top p, and temperature parameters 
 # API Key variable is automatically read from .env to ensure security
 model = GoogleGenerativeAI(model="gemini-pro", max_retries=6, top_k=10, top_p=0.9, temperature=0.65, verbose=True)
 
-# Two filler columns are placed between col1 and col2 for spacing
-# Column one contains the upload button
-# Column two contains the clear history button
-col1, = st.columns(1)
+# Sidebar lets user choose between uploading local pdf or supplying online pdf url
 with st.sidebar:
     upload_mode = st.radio("Select File Source", ["Local File", "PDF URL"], on_change=on_change_func)
     file_input = None
@@ -193,9 +192,8 @@ with st.sidebar:
         st.session_state.pdf_state_changed = False
 
 
-with col1:
-    if st.button("Clear History"):
-        st.session_state.history_list = []
+if st.button("Clear History"):
+    st.session_state.history_list = []
 
 # Container that holds the messages 
 messages = st.container()
@@ -209,13 +207,10 @@ display_chat_history(st.session_state.history_list)
 if chat:
     messages.chat_message("User").write(chat)
     has_context: bool = st.session_state.pdf_vector_store is not None
-    if has_context:
-        "Is using context"
     current_chain = create_chain(has_context, model)     
-        
     current_response = get_response_while_showing_stream(current_chain, chat, st.session_state.history_list, messages)
             
 
-    # Add both the prompt and the response to the history list
+    # Add a tuple of the prompt, response pair to the history list
     prompt_answer_pair = (HumanMessage(content=chat), AIMessage(content=current_response))
     st.session_state.history_list.append(prompt_answer_pair)
